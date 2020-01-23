@@ -11,7 +11,7 @@
 // Regex used to detect logs coming from lambda functions.
 // The regex will parse out the requestID and strip the timestamp
 // Example: 2016-11-10T23:11:54.523Z    108af3bb-a79b-11e6-8bd7-91c363cc05d9    some message
-var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\s(\w+?-\w+?-\w+?-\w+?-\w+)\s/;
+var consoleFormatRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\s(\w+?-\w+?-\w+?-\w+?-\w+)\s(INFO|ERROR|WARN|DEBUG)?/;
 
 // Used to extract RequestID
 var requestIdRegex = /(?:RequestId:|Z)\s+([\w\d\-]+)/;
@@ -72,8 +72,8 @@ function getConfig(env) {
 
         // The following parameters override the sourceCategory, sourceHost, sourceName and sourceFields metadata fields within SumoLogic.
         // Not these can also be overridden via json within the message payload. See the README for more information.
-        "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ?  env.SOURCE_CATEGORY_OVERRIDE: '',  // If none sourceCategoryOverride will not be overridden
-	"sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ?  env.SOURCE_FIELDS_OVERRIDE: '',        // If none sourceFieldsOverride will not be overridden
+        "sourceCategoryOverride": ("SOURCE_CATEGORY_OVERRIDE" in env) ? env.SOURCE_CATEGORY_OVERRIDE : '',  // If none sourceCategoryOverride will not be overridden
+        "sourceFieldsOverride": ("SOURCE_FIELDS_OVERRIDE" in env) ? env.SOURCE_FIELDS_OVERRIDE : '',        // If none sourceFieldsOverride will not be overridden
         "sourceHostOverride": ("SOURCE_HOST_OVERRIDE" in env) ? env.SOURCE_HOST_OVERRIDE : '',              // If none sourceHostOverride will not be set to the name of the logGroup
         "sourceNameOverride": ("SOURCE_NAME_OVERRIDE" in env) ? env.SOURCE_NAME_OVERRIDE : '',              // If none sourceNameOverride will not be set to the name of the logStream
         "SUMO_CLIENT_HEADER": env.SUMO_CLIENT_HEADER || 'cwl-aws-lambda',
@@ -86,8 +86,8 @@ function getConfig(env) {
         "includeSecurityGroupInfo": ("INCLUDE_SECURITY_GROUP_INFO" in env) ? env.INCLUDE_SECURITY_GROUP_INFO === "true" : false,
         // Regex to filter by logStream name prefixes
         "logStreamPrefixRegex": ("LOG_STREAM_PREFIX" in env)
-                                ? new RegExp('^(' + escapeRegExp(env.LOG_STREAM_PREFIX).replace(/,/g, '|')  + ')', 'i')
-                                : ''
+            ? new RegExp('^(' + escapeRegExp(env.LOG_STREAM_PREFIX).replace(/,/g, '|') + ')', 'i')
+            : ''
     };
     if (!config.SumoURL) {
         return new Error('Undefined SUMO_ENDPOINT environment variable');
@@ -101,7 +101,7 @@ function getConfig(env) {
 }
 
 function escapeRegExp(string) {
-  return string.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&');
+    return string.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&');
 }
 
 function transformRecords(config, records) {
@@ -143,7 +143,7 @@ exports.processLogs = function (env, eventAwslogsData, callback) {
         var records = [];
         if (awslogsData.messageType === 'CONTROL_MESSAGE') {
             console.log('Skipping Control Message');
-        } else if(config.logStreamPrefixRegex && !awslogsData.logStream.match(config.logStreamPrefixRegex)){
+        } else if (config.logStreamPrefixRegex && !awslogsData.logStream.match(config.logStreamPrefixRegex)) {
             console.log('Skipping Non-Applicable Log Stream');
         } else {
             records = createRecords(config, awslogsData.logEvents, awslogsData);
